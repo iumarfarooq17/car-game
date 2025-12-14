@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple Car Game</title>
+<style>
+body{margin:0;background:#111;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+canvas{display:block;margin:auto;background:linear-gradient(#444,#222)}
+#hud{width:400px;margin:10px auto;padding:8px 12px;background:rgba(0,0,0,0.7);color:#0f0;border-radius:10px;box-shadow:0 0 15px #0f0;display:flex;justify-content:space-between;font-size:18px}
+#overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:28px;display:none}
+#overlay span{font-size:16px;color:#aaa;margin-top:10px}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div>Score: <span id="score">0</span></div>
+  <div>Speed: <span id="speed">1x</span></div>
+</div>
+<canvas id="game" width="400" height="600"></canvas>
+<div id="overlay">
+  <div>GAME OVER</div>
+  <span>Tap / Click to Continue</span>
+</div>
+<audio id="engine" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const speedEl=document.getElementById('speed');
+const overlay=document.getElementById('overlay');
+const engineSound=document.getElementById('engine');
+engineSound.play();
+
+let score=0,gameOver=false,baseSpeed=2,speedMultiplier=1;
+let car={x:180,y:480,w:40,h:80,speed:6},enemies=[],keys={};
+document.addEventListener('keydown',e=>keys[e.key]=true);
+document.addEventListener('keyup',e=>keys[e.key]=false);
+overlay.addEventListener('click',restart);canvas.addEventListener('click',()=>{if(gameOver)restart();});
+
+function restart(){gameOver=false;score=0;speedMultiplier=1;enemies=[];overlay.style.display='none';spawnEnemies();}
+
+function drawCar(x,y){ctx.fillStyle='#ff3333';ctx.fillRect(x,y,40,80);ctx.fillStyle='#fff';ctx.fillRect(x+8,y+10,8,15);ctx.fillRect(x+24,y+10,8,15);ctx.fillStyle='#000';ctx.fillRect(x+5,y+65,10,10);ctx.fillRect(x+25,y+65,10,10);}
+
+function spawnEnemies(){clearInterval(window.enemyTimer);window.enemyTimer=setInterval(()=>{enemies.push({x:Math.random()*360,y:-100,w:40,h:80,speed:baseSpeed*speedMultiplier+Math.random()*2})},1200/speedMultiplier);}
+spawnEnemies();
+
+function update(){if(gameOver)return;
+if(keys['ArrowLeft']&&car.x>0)car.x-=car.speed;
+if(keys['ArrowRight']&&car.x<canvas.width-car.w)car.x+=car.speed;
+
+speedMultiplier+=0.0005;speedEl.textContent=speedMultiplier.toFixed(1)+'x';
+
+enemies.forEach(e=>e.y+=e.speed);
+enemies.forEach(e=>{if(car.x<e.x+e.w&&car.x+car.w>e.x&&car.y<e.y+e.h&&car.y+car.h>e.y){gameOver=true;overlay.style.display='flex';}});
+enemies=enemies.filter(e=>e.y<canvas.height+100);
+score++;scoreEl.textContent=score;}
+
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.strokeStyle='#fff';ctx.setLineDash([20,20]);ctx.beginPath();ctx.moveTo(200,0);ctx.lineTo(200,600);ctx.stroke();ctx.setLineDash([]);
+drawCar(car.x,car.y);
+ctx.fillStyle='#111';enemies.forEach(e=>drawCar(e.x,e.y));
+if(gameOver){ctx.fillStyle='white';ctx.font='28px Arial';ctx.fillText('GAME OVER',110,300);}}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>
